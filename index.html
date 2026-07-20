@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Signal</title>
+<meta name="theme-color" content="#101614">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#F6F8F6; --card:#FFFFFF; --ink:#182420; --sub:#5A6B64; --line:#E2E8E4;
+    --accent:#0E8577; --accent-ink:#0A6B60; --accent-soft:#E3F2EE;
+    --warn:#A85A0A; --warn-soft:#FBF0E2; --chip:#EEF2EF; --seen:#9AA8A2;
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --bg:#101614; --card:#18201D; --ink:#E7ECE9; --sub:#8FA098; --line:#26302C;
+    --accent:#3DDBC4; --accent-ink:#3DDBC4; --accent-soft:#12332D;
+    --warn:#F0A94B; --warn-soft:#332711; --chip:#212B27; --seen:#5A6B64;
+  }}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:680px;margin:0 auto;padding:0 14px 90px}
+  header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  h1{font-size:20px;margin:0;letter-spacing:-.02em}
+  h1 .dot{color:var(--accent)}
+  .sub{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+  .hdr-btns{display:flex;gap:7px}
+  .pill{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .pill.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  @media (prefers-color-scheme: dark){.pill.primary{color:#08211C}}
+  .day-hdr{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+  .day-hdr b{font-size:14px;letter-spacing:.02em}
+  .day-hdr .n{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+  .day-hdr::after{content:"";flex:1;height:1px;background:var(--line)}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--sub);margin:18px 0 8px;font-weight:600}
+  .dl-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .dl{background:var(--warn-soft);border:1px solid var(--line);border-radius:12px;padding:9px 12px;min-width:210px;flex-shrink:0;text-decoration:none;color:var(--ink)}
+  .dl b{display:block;font-size:13.5px;line-height:1.3}
+  .dl .when{color:var(--warn);font-weight:700;font-size:12.5px}
+  .dl .note{color:var(--sub);font-size:12px;display:block;margin-top:2px;line-height:1.4}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px 12px;margin-bottom:12px;transition:opacity .2s}
+  .meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);margin-bottom:6px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+  .score{background:var(--accent-soft);color:var(--accent-ink);font-weight:700;border-radius:6px;padding:1px 7px;font-size:11.5px}
+  .card h3{font-size:16.5px;line-height:1.35;margin:0 0 7px;text-wrap:balance}
+  .card h3 a{color:var(--ink);text-decoration:none}
+  .why{font-size:13.5px;color:var(--accent-ink);background:var(--accent-soft);border-radius:9px;padding:8px 11px;margin:0 0 9px;line-height:1.45}
+  .sum{font-size:14px;color:var(--sub);margin:0 0 10px;line-height:1.5}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .open{font-size:13px;font-weight:600;color:var(--accent-ink);text-decoration:none}
+  .votes{display:flex;gap:6px}
+  .v{border:1px solid var(--line);background:var(--chip);border-radius:9px;padding:5px 13px;font-size:15px;cursor:pointer;line-height:1}
+  .v.on-up{background:var(--accent-soft);border-color:var(--accent)}
+  .v.on-dn{background:var(--warn-soft);border-color:var(--warn)}
+  .tail-item{display:block;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .tail-item a{text-decoration:none;color:inherit}
+  .tail-item b{font-size:14.5px;font-weight:600;line-height:1.35;display:block}
+  .tail-item span{font-size:12.5px;color:var(--sub);display:block;margin-top:3px;line-height:1.45}
+  .tail-votes{float:right;margin-left:8px}
+  .tail-votes .v{padding:3px 9px;font-size:13px}
+  .is-seen{opacity:.45}
+  body.hide-seen .is-seen{display:none}
+  .seen-note{display:none;text-align:center;color:var(--sub);font-size:12.5px;padding:8px 0}
+  body.hide-seen .seen-note{display:block}
+  footer{margin-top:34px;text-align:center;color:var(--sub);font-size:12.5px;line-height:1.6}
+  #status{text-align:center;color:var(--sub);padding:40px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>Signal<span class="dot">.</span></h1><div class="sub" id="hdr-sub">loading…</div></div>
+    <div class="hdr-btns">
+      <button class="pill" id="toggle-seen" onclick="toggleSeen()">Hide read</button>
+      <button class="pill primary" onclick="sendFeedback()">Feedback</button>
+    </div>
+  </header>
+  <div id="feed"><div id="status">Loading your feed…</div></div>
+  <footer>Signal — built nightly from your interest profile.<br>Items fade as you scroll past them; 👍/👎 then Feedback tunes tomorrow's issue.</footer>
+</div>
+<script>
+const KEY_SEEN='signal-seen', KEY_VOTES='signal-votes', KEY_HIDE='signal-hideseen';
+const seen=JSON.parse(localStorage.getItem(KEY_SEEN)||'{}');
+const votes=JSON.parse(localStorage.getItem(KEY_VOTES)||'{}');
+const titles={};
+const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let saveTimer=null;
+const persistSeen=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(()=>localStorage.setItem(KEY_SEEN,JSON.stringify(seen)),400)};
+
+function voteBtns(url,small){
+  const v=votes[url]||0;
+  return `<div class="votes ${small?'tail-votes':''}">
+    <button class="v ${v===1?'on-up':''}" data-u="${esc(url)}" data-d="1">👍</button>
+    <button class="v ${v===-1?'on-dn':''}" data-u="${esc(url)}" data-d="-1">👎</button></div>`;
+}
+function cardHtml(it){
+  const s=seen[it.url]?' is-seen':'';
+  return `<article class="card${s}" data-url="${esc(it.url)}">
+    <div class="meta"><span class="score">${it.score}</span><span>${esc(it.source)}</span><span>·</span><span>${esc(it.date)}</span></div>
+    <h3><a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a></h3>
+    <p class="why">${esc(it.why)}</p>
+    <p class="sum">${esc(it.summary)}</p>
+    <div class="row"><a class="open" href="${esc(it.url)}" target="_blank" rel="noopener">Open source →</a>${voteBtns(it.url)}</div>
+  </article>`;
+}
+function tailHtml(it){
+  const s=seen[it.url]?' is-seen':'';
+  return `<div class="tail-item${s}" data-url="${esc(it.url)}">${voteBtns(it.url,true)}<a href="${esc(it.url)}" target="_blank" rel="noopener"><b>${esc(it.title)}</b><span>${esc(it.source)}${it.summary?' — '+esc(it.summary):''}</span></a></div>`;
+}
+const bucketNames={papers:'Papers',models:'Models & tooling','safety-writing':'Safety & community',niche:'Your niche','careers-funding':'Careers & funding'};
+
+async function load(){
+  try{
+    const days=await (await fetch('data/index.json?'+Date.now())).json(); // newest first
+    const feedEl=document.getElementById('feed');
+    let html='',unread=0,total=0;
+    for(let i=0;i<days.length;i++){
+      const d=await (await fetch('data/'+days[i]+'.json'+(i===0?'?'+Date.now():''))).json();
+      const items=[...d.top,...d.tail];
+      items.forEach(it=>{titles[it.url]=it.title;total++;if(!seen[it.url])unread++});
+      html+=`<div class="day-hdr"><b>${esc(d.generated)}</b><span class="n">${items.filter(it=>!seen[it.url]).length} unread</span></div>`;
+      if(i===0&&d.deadlines&&d.deadlines.length){
+        html+=`<h2>Deadlines on your radar</h2><div class="dl-strip">`+d.deadlines.map(x=>`<a class="dl" href="${esc(x.url)}" target="_blank" rel="noopener"><span class="when">${esc(x.date)}</span><b>${esc(x.label)}</b><span class="note">${esc(x.note)}</span></a>`).join('')+`</div>`;
+      }
+      html+=`<h2>Top stories</h2>`+d.top.map(cardHtml).join('');
+      let last=null;
+      html+=d.tail.map(it=>{
+        let h='';
+        if(it.bucket!==last){h=`<h2>${bucketNames[it.bucket]||it.bucket}</h2>`;last=it.bucket}
+        return h+tailHtml(it);
+      }).join('');
+      html+=`<div class="seen-note">Read items on this day are hidden.</div>`;
+    }
+    feedEl.innerHTML=html;
+    document.getElementById('hdr-sub').textContent=unread+' unread · '+total+' items · '+days.length+' day'+(days.length>1?'s':'');
+    observe();
+  }catch(e){document.getElementById('status').textContent='Could not load feed: '+e.message}
+}
+
+function observe(){
+  const io=new IntersectionObserver(entries=>{
+    for(const en of entries){
+      // mark seen once the element has scrolled fully above the viewport
+      if(!en.isIntersecting&&en.boundingClientRect.bottom<0){
+        const u=en.target.dataset.url;
+        if(u&&!seen[u]){seen[u]=1;persistSeen();en.target.classList.add('is-seen')}
+        io.unobserve(en.target);
+      }
+    }
+  },{threshold:0});
+  document.querySelectorAll('[data-url]').forEach(el=>io.observe(el));
+}
+
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('.v'); if(!b)return;
+  ev.preventDefault();
+  const u=b.dataset.u,val=+b.dataset.d;
+  votes[u]=(votes[u]===val)?0:val;
+  localStorage.setItem(KEY_VOTES,JSON.stringify(votes));
+  const wrap=b.parentElement,[up,dn]=wrap.querySelectorAll('.v');
+  up.className='v'+(votes[u]===1?' on-up':'');
+  dn.className='v'+(votes[u]===-1?' on-dn':'');
+});
+
+function toggleSeen(){
+  const on=document.body.classList.toggle('hide-seen');
+  localStorage.setItem(KEY_HIDE,on?'1':'');
+  document.getElementById('toggle-seen').textContent=on?'Show read':'Hide read';
+}
+if(localStorage.getItem(KEY_HIDE)){document.body.classList.add('hide-seen');document.getElementById('toggle-seen').textContent='Show read'}
+
+function sendFeedback(){
+  const ups=[],downs=[];
+  for(const [u,v] of Object.entries(votes)){
+    if(v===1)ups.push('+ '+(titles[u]||u));
+    if(v===-1)downs.push('- '+(titles[u]||u));
+  }
+  if(!ups.length&&!downs.length){alert('Vote on a few items first — then send.');return}
+  const today=new Date().toISOString().slice(0,10);
+  const body=['NewsBrief feedback '+today,'','LIKED:',...ups,'','DISLIKED:',...downs,'','Notes: '].join('\n');
+  location.href='mailto:pskeough@gmail.com?subject='+encodeURIComponent('NewsBrief feedback '+today)+'&body='+encodeURIComponent(body);
+}
+
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+load();
+</script>
+</body>
+</html>
