@@ -121,7 +121,7 @@ function tailHtml(it){
   const s=seen[it.url]?' is-seen':'';
   return `<div class="tail-item${s}" data-url="${esc(it.url)}">${voteBtns(it.url,true)}<a href="${esc(it.url)}" target="_blank" rel="noopener"><b>${esc(it.title)}</b><span>${esc(it.source)}${it.summary?' — '+esc(it.summary):''}</span></a></div>`;
 }
-const bucketNames={papers:'Papers',models:'Models & tooling','safety-writing':'Safety & community',niche:'Your niche','careers-funding':'Careers & funding'};
+const bucketNames={papers:'Papers',models:'Models & tooling',fun:'Projects & fun','safety-writing':'Safety & community',niche:'Your niche','careers-funding':'Careers & funding'};
 
 async function load(){
   try{
