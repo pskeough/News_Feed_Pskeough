@@ -4,32 +4,32 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Signal</title>
-<meta name="theme-color" content="#101614">
+<meta name="theme-color" content="#262624">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <style>
   :root{
-    --bg:#F6F8F6; --card:#FFFFFF; --ink:#182420; --sub:#5A6B64; --line:#E2E8E4;
-    --accent:#0E8577; --accent-ink:#0A6B60; --accent-soft:#E3F2EE;
-    --warn:#A85A0A; --warn-soft:#FBF0E2; --chip:#EEF2EF; --seen:#9AA8A2;
+    --bg:#FAF9F5; --card:#FFFFFF; --ink:#3D3929; --sub:#87867F; --line:#E8E4D9;
+    --accent:#C15F3C; --accent-ink:#A9502F; --accent-soft:#F6EAE3;
+    --warn:#966428; --warn-soft:#F7EFDF; --chip:#F0EEE6; --seen:#B8B4A7;
   }
   @media (prefers-color-scheme: dark){:root{
-    --bg:#101614; --card:#18201D; --ink:#E7ECE9; --sub:#8FA098; --line:#26302C;
-    --accent:#3DDBC4; --accent-ink:#3DDBC4; --accent-soft:#12332D;
-    --warn:#F0A94B; --warn-soft:#332711; --chip:#212B27; --seen:#5A6B64;
+    --bg:#262624; --card:#30302E; --ink:#ECEAE4; --sub:#A6A39A; --line:#3E3D3A;
+    --accent:#D97757; --accent-ink:#E89478; --accent-soft:#453026;
+    --warn:#E0A052; --warn-soft:#3B321F; --chip:#393937; --seen:#6E6B63;
   }}
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
   .wrap{max-width:680px;margin:0 auto;padding:0 14px 90px}
   header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-  h1{font-size:20px;margin:0;letter-spacing:-.02em}
+  h1{font-size:21px;margin:0;letter-spacing:-.01em;font-family:Georgia,'Times New Roman',serif;font-weight:600}
   h1 .dot{color:var(--accent)}
   .sub{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
   .hdr-btns{display:flex;gap:7px}
   .pill{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
-  .pill.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  @media (prefers-color-scheme: dark){.pill.primary{color:#08211C}}
+  .pill.primary{background:var(--accent);border-color:var(--accent);color:#FFF8F4}
+  @media (prefers-color-scheme: dark){.pill.primary{color:#2A1A12}}
   .day-hdr{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
   .day-hdr b{font-size:14px;letter-spacing:.02em}
   .day-hdr .n{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
@@ -43,7 +43,7 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px 12px;margin-bottom:12px;transition:opacity .2s}
   .meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);margin-bottom:6px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
   .score{background:var(--accent-soft);color:var(--accent-ink);font-weight:700;border-radius:6px;padding:1px 7px;font-size:11.5px}
-  .card h3{font-size:16.5px;line-height:1.35;margin:0 0 7px;text-wrap:balance}
+  .card h3{font-size:17.5px;line-height:1.35;margin:0 0 7px;text-wrap:balance;font-family:Georgia,'Times New Roman',serif;font-weight:600}
   .card h3 a{color:var(--ink);text-decoration:none}
   .why{font-size:13.5px;color:var(--accent-ink);background:var(--accent-soft);border-radius:9px;padding:8px 11px;margin:0 0 9px;line-height:1.45}
   .sum{font-size:14px;color:var(--sub);margin:0 0 10px;line-height:1.5}
