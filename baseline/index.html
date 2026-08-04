@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0f12">
+<title>Baseline</title>
+<style>
+  :root{--bg:#0d0f12;--fg:#e7e9ee;--dim:#8a90a0;--line:#242833;--accent:#6ea8fe;--ok:#4ade80}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;
+       padding:20px 18px 60px;max-width:640px;margin-inline:auto;-webkit-tap-highlight-color:transparent}
+  h1{font-size:18px;font-weight:600;margin:0 0 2px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:24px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  label{display:block;font-size:15px;margin-bottom:12px}
+  .anchors{display:flex;justify-content:space-between;color:var(--dim);font-size:12px;margin-top:6px}
+  input[type=range]{width:100%;accent-color:var(--accent);height:34px}
+  input[type=time],input[type=number],textarea{width:100%;background:#161a21;color:var(--fg);
+       border:1px solid var(--line);border-radius:8px;padding:11px;font:inherit}
+  textarea{min-height:84px;resize:vertical}
+  .val{float:right;color:var(--accent);font-variant-numeric:tabular-nums}
+  .yn{display:flex;gap:10px}
+  .yn button{flex:1;padding:13px;border-radius:9px;border:1px solid var(--line);
+       background:#161a21;color:var(--fg);font:inherit}
+  .yn button[aria-pressed=true]{border-color:var(--accent);background:#1c2a44;color:#fff}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  #send{width:100%;padding:16px;border:0;border-radius:11px;background:var(--accent);color:#06101f;
+       font:600 16px/1 inherit;margin-top:6px}
+  #send:disabled{opacity:.5}
+  #status{text-align:center;color:var(--dim);font-size:13px;margin-top:14px;min-height:20px}
+  .ok{color:var(--ok)!important}
+  .mic{margin-top:8px;background:#161a21;border:1px solid var(--line);color:var(--dim);
+       border-radius:8px;padding:9px 13px;font:inherit}
+  .note{color:var(--dim);font-size:12px;margin-top:10px}
+</style>
+</head>
+<body>
+<h1 id="slotTitle">Baseline</h1>
+<div class="sub" id="slotSub">Since the last ping only.</div>
+<form id="f"></form>
+<button id="send">Log it</button>
+<div id="status"></div>
+
+<script>
+const NTFY = "https://ntfy.sh/baseline-pk-9f3q7w2m-log";
+const ACTIVITY = "sitting down with the Basilisk file";
+const slot = new URLSearchParams(location.search).get("slot") || "pm";
+const data = { slot, via: "form" };
+
+const LABEL = { am:"Morning", mid:"Midday", pm:"Evening" };
+document.getElementById("slotTitle").textContent = "Baseline — " + (LABEL[slot]||slot);
+
+const f = document.getElementById("f");
+const el = h => { const d=document.createElement("div"); d.className="card"; d.innerHTML=h; f.appendChild(d); return d; };
+
+function vas(key, prompt, lo, hi, start=50){
+  const d = el(`<label>${prompt}<span class="val" id="v_${key}">${start}</span></label>
+    <input type="range" min="0" max="100" value="${start}" id="i_${key}">
+    <div class="anchors"><span>${lo}</span><span>${hi}</span></div>`);
+  const i = d.querySelector("#i_"+key), v = d.querySelector("#v_"+key);
+  // Only record if touched — an untouched slider is not a rating.
+  i.addEventListener("input", () => { v.textContent = i.value; data[key] = +i.value; });
+}
+
+function yesno(key, prompt){
+  const d = el(`<label>${prompt}</label><div class="yn">
+    <button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></div>`);
+  d.querySelectorAll("button").forEach(b => b.onclick = () => {
+    d.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");
+    data[key] = b.dataset.v === "1";
+    if (key === "card_fired" && !data[key]) why.hidden = false;
+    if (key === "card_fired" && data[key]) { why.hidden = true; delete data.card_blocker; }
+  });
+}
+
+// --- slot composition (item cap: keep each ping ~20s) ---
+if (slot === "am") {
+  yesno("dose_am", "Bupropion, morning dose — taken?");
+  const s = el(`<label>Sleep</label><div class="row">
+    <div><div class="anchors"><span>lights out</span></div><input type="time" id="on"></div>
+    <div><div class="anchors"><span>awake</span></div><input type="time" id="wk"></div></div>`);
+  s.querySelector("#on").onchange = e => (data.sleep = {...(data.sleep||{}), onset:e.target.value});
+  s.querySelector("#wk").onchange = e => (data.sleep = {...(data.sleep||{}), wake:e.target.value});
+  vas("refreshed", "Refreshed on waking?", "not at all", "fully");
+}
+if (slot === "pm") {
+  yesno("dose_pm", "Bupropion, second dose — taken?");
+  yesno("card_fired", "Did the card fire today?");
+}
+
+vas("effort_now", `Right now, how much effort would you spend to get ${ACTIVITY}?`,
+    "none at all", "as much as it took");
+
+var why = el(`<label>What stopped it?</label>
+  <div class="yn" style="flex-wrap:wrap">
+    <button type="button" data-v="cue never happened">no cue</button>
+    <button type="button" data-v="cue happened, didn't move">didn't move</button>
+    <button type="button" data-v="chose not to">chose not to</button>
+  </div>`);
+why.hidden = true;
+why.querySelectorAll("button").forEach(b => b.onclick = () => {
+  why.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true"); data.card_blocker = b.dataset.v;
+});
+
+if (slot === "pm") {
+  vas("urge", "Strongest compulsive urge since the last ping (anything)", "none", "overwhelming", 0);
+  const n = el(`<label>Anything (optional)</label><textarea id="note"
+      placeholder="or tap the mic"></textarea><button type="button" class="mic" id="mic">🎙 speak</button>
+      <div class="note">Reminder: this transits ntfy.sh in cleartext. Treat as public until encryption lands.</div>`);
+  n.querySelector("#note").oninput = e => (data.note = e.target.value || undefined);
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const mic = n.querySelector("#mic");
+  if (!SR) { mic.disabled = true; mic.textContent = "🎙 not supported here"; }
+  else mic.onclick = () => {
+    const r = new SR(); r.lang = "en-AU"; r.interimResults = false; r.continuous = true;
+    mic.textContent = "● listening — tap to stop";
+    let stop = false;
+    mic.onclick = () => { stop = true; r.stop(); };
+    r.onresult = e => {
+      const t = Array.from(e.results).map(x => x[0].transcript).join(" ");
+      const ta = n.querySelector("#note"); ta.value = t; data.note = t;
+    };
+    r.onend = () => { if (!stop) return; mic.textContent = "🎙 speak"; location.reload; };
+    r.start();
+  };
+}
+
+// --- submit ---
+const status = document.getElementById("status");
+document.getElementById("send").onclick = async () => {
+  const btn = document.getElementById("send");
+  btn.disabled = true; status.textContent = "sending…";
+  try {
+    const res = await fetch(NTFY, { method:"POST", body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(res.status);
+    status.textContent = "logged."; status.className = "ok";
+    btn.textContent = "done";
+  } catch (e) {
+    // Never lose a row to a dead network — queue it and retry on next open.
+    const q = JSON.parse(localStorage.getItem("baseline_queue") || "[]");
+    q.push(data); localStorage.setItem("baseline_queue", JSON.stringify(q));
+    status.textContent = "offline — queued, will send next time you open this.";
+    btn.disabled = false;
+  }
+};
+
+// Flush anything queued from a previous offline attempt.
+(async () => {
+  const q = JSON.parse(localStorage.getItem("baseline_queue") || "[]");
+  if (!q.length) return;
+  const left = [];
+  for (const row of q) {
+    try { const r = await fetch(NTFY,{method:"POST",body:JSON.stringify(row)}); if(!r.ok) throw 0; }
+    catch { left.push(row); }
+  }
+  localStorage.setItem("baseline_queue", JSON.stringify(left));
+  if (q.length !== left.length) status.textContent = `flushed ${q.length-left.length} queued row(s).`;
+})();
+</script>
+</body>
+</html>
