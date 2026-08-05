@@ -86,7 +86,7 @@
     <div class="hdr-btns">
       <button class="pill theme" id="toggle-theme" onclick="cycleTheme()" title="Theme">◐</button>
       <button class="pill" id="toggle-seen" onclick="toggleSeen()">Hide read</button>
-      <button class="pill primary" onclick="sendFeedback()">Feedback</button>
+      <button class="pill primary" id="fb-btn" onclick="sendFeedback()">Feedback</button>
     </div>
   </header>
   <div id="feed"><div id="status">Loading your feed…</div></div>
@@ -174,7 +174,23 @@ document.addEventListener('click',ev=>{
   const wrap=b.parentElement,[up,dn]=wrap.querySelectorAll('.v');
   up.className='v'+(votes[u]===1?' on-up':'');
   dn.className='v'+(votes[u]===-1?' on-dn':'');
+  refreshFbBadge();
 });
+
+// --- unsent-vote badge -------------------------------------------------
+// Votes live in localStorage the moment you tap; they only reach the nightly
+// run once you actually send them. Nothing used to say so, so votes could pile
+// up unsent forever and look identical to "no feedback" from the ingest side.
+const KEY_SENT='signal-votes-sent';
+const sentUrls=new Set(JSON.parse(localStorage.getItem(KEY_SENT)||'[]'));
+function unsentVotes(){return Object.entries(votes).filter(([u,v])=>v&&!sentUrls.has(u))}
+function refreshFbBadge(){
+  const b=document.getElementById('fb-btn'); if(!b)return;
+  const n=unsentVotes().length;
+  b.textContent=n?`Feedback (${n})`:'Feedback';
+  b.style.outline=n?'2px solid var(--accent,#C15F3C)':'';
+}
+refreshFbBadge();
 
 function toggleSeen(){
   const on=document.body.classList.toggle('hide-seen');
@@ -184,22 +200,62 @@ function toggleSeen(){
 if(localStorage.getItem(KEY_HIDE)){document.body.classList.add('hide-seen');document.getElementById('toggle-seen').textContent='Show read'}
 
 function sendFeedback(){
-  const ups=[],downs=[];
+  const ups=[],downs=[],voted=[];
   for(const [u,v] of Object.entries(votes)){
-    if(v===1)ups.push('+ '+(titles[u]||u));
-    if(v===-1)downs.push('- '+(titles[u]||u));
+    if(v===1){ups.push('+ '+(titles[u]||u));voted.push(u)}
+    if(v===-1){downs.push('- '+(titles[u]||u));voted.push(u)}
   }
   if(!ups.length&&!downs.length){alert('Vote on a few items first — then send.');return}
-  const today=new Date().toISOString().slice(0,10);
+  // en-CA gives YYYY-MM-DD in LOCAL time. toISOString() is UTC, which stamped the
+  // previous day's date on any morning use from Sydney.
+  const today=new Date().toLocaleDateString('en-CA');
   const subject='NewsBrief feedback '+today;
   const body=[subject,'','LIKED:',...ups,'','DISLIKED:',...downs,'','Notes: '].join('\n');
-  // Clipboard fallback: mailto: silently no-ops on some Android/PWA setups, which is
-  // indistinguishable from "no feedback" on the ingest side. Copy first, then try mailto.
-  const copied=navigator.clipboard?navigator.clipboard.writeText(body).then(()=>true,()=>false):Promise.resolve(false);
-  copied.then(ok=>{
-    location.href='mailto:pskeough@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-    if(ok)setTimeout(()=>alert('Feedback copied to clipboard.\n\nIf your mail app did not open, paste it into an email to pskeough@gmail.com with the subject:\n'+subject),1200);
-  });
+  // Do NOT rely on mailto: alone. It no-ops silently in a sandboxed artifact iframe
+  // (the frame runtime only forwards http/https navigations) and on some Android PWA
+  // setups — which is indistinguishable from "no feedback" on the ingest side.
+  // Always show the text so there is a guaranteed copy/paste path.
+  if(navigator.clipboard)navigator.clipboard.writeText(body).catch(()=>{});
+  showFeedbackSheet(subject,body,voted);
+}
+
+function showFeedbackSheet(subject,body,voted){
+  const esc2=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const mailto='mailto:pskeough@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  const wrap=document.createElement('div');
+  wrap.setAttribute('role','dialog');
+  wrap.setAttribute('aria-label','Send feedback');
+  wrap.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:0';
+  wrap.innerHTML=`<div style="background:var(--bg,#FAF9F5);color:var(--ink,#3D3929);width:100%;max-width:680px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px 22px;font:15px/1.5 system-ui,-apple-system,sans-serif">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px">
+      <b style="font-size:16px">${voted.length} vote${voted.length===1?'':'s'} ready</b>
+      <button id="fb-x" style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:inherit;padding:4px 8px">×</button>
+    </div>
+    <p style="margin:0 0 10px;font-size:13px;opacity:.75">Copied to your clipboard. Send it however is easiest — the nightly run reads the email.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <a id="fb-mail" href="${esc2(mailto)}" style="background:var(--accent,#C15F3C);color:#FFF8F4;text-decoration:none;border-radius:20px;padding:9px 16px;font-weight:600;font-size:14px">Open mail app</a>
+      <button id="fb-copy" style="border:1px solid var(--line,#E8E4D9);background:var(--chip,#F0EEE6);color:inherit;border-radius:20px;padding:9px 16px;font-weight:600;font-size:14px;cursor:pointer">Copy again</button>
+      <button id="fb-done" style="border:1px solid var(--line,#E8E4D9);background:var(--chip,#F0EEE6);color:inherit;border-radius:20px;padding:9px 16px;font-weight:600;font-size:14px;cursor:pointer">Mark sent</button>
+    </div>
+    <textarea id="fb-text" readonly style="width:100%;height:34vh;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;border:1px solid var(--line,#E8E4D9);border-radius:10px;background:var(--card,#fff);color:inherit;resize:vertical">${esc2(body)}</textarea>
+    <p style="margin:8px 0 0;font-size:12px;opacity:.6">Subject must stay: <b>${esc2(subject)}</b></p>
+  </div>`;
+  document.body.appendChild(wrap);
+  const close=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{if(e.target===wrap)close()});
+  wrap.querySelector('#fb-x').onclick=close;
+  wrap.querySelector('#fb-copy').onclick=()=>{
+    const t=wrap.querySelector('#fb-text');t.select();t.setSelectionRange(0,999999);
+    if(navigator.clipboard)navigator.clipboard.writeText(t.value).catch(()=>{});
+    else try{document.execCommand('copy')}catch(e){}
+  };
+  const markSent=()=>{
+    voted.forEach(u=>sentUrls.add(u));
+    localStorage.setItem(KEY_SENT,JSON.stringify([...sentUrls]));
+    refreshFbBadge();close();
+  };
+  wrap.querySelector('#fb-done').onclick=markSent;
+  wrap.querySelector('#fb-mail').addEventListener('click',()=>setTimeout(markSent,600));
 }
 
 // Theme: auto (system) -> light -> dark
