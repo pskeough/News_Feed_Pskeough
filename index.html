@@ -191,8 +191,15 @@ function sendFeedback(){
   }
   if(!ups.length&&!downs.length){alert('Vote on a few items first — then send.');return}
   const today=new Date().toISOString().slice(0,10);
-  const body=['NewsBrief feedback '+today,'','LIKED:',...ups,'','DISLIKED:',...downs,'','Notes: '].join('\n');
-  location.href='mailto:pskeough@gmail.com?subject='+encodeURIComponent('NewsBrief feedback '+today)+'&body='+encodeURIComponent(body);
+  const subject='NewsBrief feedback '+today;
+  const body=[subject,'','LIKED:',...ups,'','DISLIKED:',...downs,'','Notes: '].join('\n');
+  // Clipboard fallback: mailto: silently no-ops on some Android/PWA setups, which is
+  // indistinguishable from "no feedback" on the ingest side. Copy first, then try mailto.
+  const copied=navigator.clipboard?navigator.clipboard.writeText(body).then(()=>true,()=>false):Promise.resolve(false);
+  copied.then(ok=>{
+    location.href='mailto:pskeough@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    if(ok)setTimeout(()=>alert('Feedback copied to clipboard.\n\nIf your mail app did not open, paste it into an email to pskeough@gmail.com with the subject:\n'+subject),1200);
+  });
 }
 
 // Theme: auto (system) -> light -> dark
