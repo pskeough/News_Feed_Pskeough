@@ -1,4 +1,8 @@
-const CACHE = 'signal-v4';
+// Bump this whenever index.html changes: the shell is cache-first, so an installed PWA keeps
+// serving the old shell until the cache NAME changes and `activate` deletes the stale one.
+// v5 (2026-08-20): bucket display names for blogs / careers / au_phd, which previously rendered
+// as their raw keys.
+const CACHE = 'signal-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
